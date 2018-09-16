@@ -1,0 +1,88 @@
+version: '2'
+services:
+  db:
+    image: mysql:5.6
+    container_name: db
+    restart: always
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: elasticdb
+    volumes:
+      - ~/elasticdb:/var/lib/mysql
+    networks:
+      - esnet
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.4.0
+    container_name: kibana
+    environment:
+      ELASTICSEARCH_URL: http://elastic-url:9200
+    ports:
+      - 5601:5601
+    networks:
+      - esnet
+    links:
+      - elasticsearch:elastic-url
+    depends_on:
+      - elasticsearch
+  logstash:
+    image: docker.elastic.co/logstash/logstash:6.4.0
+    container_name: logstash
+    volumes:
+      - ./elk-config:/logstash_dir
+    command: ./bin/logstash -f logstash_dir/logstash.conf
+    ports:
+      - 5044:5044
+    networks:
+      - esnet
+    links:
+      - elasticsearch
+      - db
+    depends_on:
+      - elasticsearch
+      - db
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - transport.host=127.0.0.1
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx2g -Xmx2g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+    volumes:
+      - ~/esdata:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - esnet
+  web:
+    build: .
+    command: bundle exec rails s -p 3000 -b '0.0.0.0'
+    volumes:
+      - .:/app
+    ports:
+      - 3333:3000
+    links:
+      - db
+    depends_on:
+      - db
+    networks:
+      - esnet
+
+volumes:
+  esdata:
+    driver: local
+  elasticdb:
+    driver: local
+
+networks:
+  esnet:
