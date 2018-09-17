@@ -5,20 +5,10 @@ application up and running.
 
 Things you may want to cover:
 
-* Ruby version
+`docker-compose up`
 
-* System dependencies
+`docker-compose run elasticsearch /usr/share/elasticsearch/bin/elasticsearch-plugin install analysis-kuromoji`
 
-* Configuration
+`docker-compose restart elasticsearch`
 
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+`Ex: curl -XGET 'localhost:9200/kuromoji_sample/_analyze?pretty' -H 'Content-Type: application/json' -d '{"analyzer" : "kuromoji", "text" : "寿司がおいしいね"}'`
